@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.databinding.DataBindingUtil
 import android.os.Bundle
 import android.provider.MediaStore
@@ -28,6 +29,7 @@ class MainActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         activityMainBinding = DataBindingUtil.setContentView(this, R.layout.activity_main)
+        addShortcut()
     }
 
     fun clearImage(view: View) {
@@ -104,5 +106,28 @@ class MainActivity : BaseActivity() {
         if (grantedRequestCode == PermissionManager.REQUEST_STORAGE_PERMISSION) {
             launchCamera()
         }
+    }
+
+    fun addShortcut() {
+        //Adding shortcut for MainActivity
+        //on Home screen
+        val shortcutIntent = Intent(applicationContext, this::class.java)
+
+        shortcutIntent.action = Intent.ACTION_MAIN
+
+        val intent = Intent()
+        intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent)
+        intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, getString(R.string.app_name))
+        intent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE,
+                Intent.ShortcutIconResource.fromContext(applicationContext,
+                        R.mipmap.ic_launcher))
+
+        intent.action = "com.android.launcher.action.INSTALL_SHORTCUT"
+        applicationContext.sendBroadcast(intent)
+
+        val sharedPreferences = getPreferences(Context.MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+        editor.putBoolean("PREF_KEY_SHORTCUT_ADDED", true)
+        editor.commit()
     }
 }
