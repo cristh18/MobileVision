@@ -20,7 +20,7 @@
             android:layout_height="match_parent"
             android:layout_margin="@dimen/view_margin"
             android:contentDescription="@string/imageview_description"
-            android:scaleType="fitStart" />
+            android:scaleType="center" />
 
         <TextView
             android:id="@+id/title_text_view"

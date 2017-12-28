@@ -1,26 +1,25 @@
 package com.tolodev.mobilevision.ui
 
 import android.Manifest
+import android.app.Activity
+import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.databinding.DataBindingUtil
 import android.os.Bundle
 import android.provider.MediaStore
-import android.support.v4.app.ActivityCompat
-import android.support.v4.content.ContextCompat
 import android.support.v4.content.FileProvider
 import android.view.View
 import android.widget.Toast
 import com.tolodev.mobilevision.R
 import com.tolodev.mobilevision.databinding.ActivityMainBinding
+import com.tolodev.mobilevision.manager.PermissionManager
 import com.tolodev.mobilevision.util.BitmapUtils
-import java.io.File
+import timber.log.Timber
 import java.io.IOException
 
 class MainActivity : BaseActivity() {
 
-    private val REQUEST_STORAGE_PERMISSION = 1
-    private val REQUEST_IMAGE_CAPTURE = 2
+    private val REQUEST_IMAGE_CAPTURE = 1
     private val FILE_PROVIDER_AUTHORITY = "com.example.android.fileprovider"
 
     lateinit var activityMainBinding: ActivityMainBinding
@@ -40,14 +39,7 @@ class MainActivity : BaseActivity() {
     }
 
     fun emojifyMe(view: View) {
-        Toast.makeText(this, "Take photo", Toast.LENGTH_LONG).show()
-
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
-                    REQUEST_STORAGE_PERMISSION)
-        } else {
+        if (PermissionManager.isPermissionsGranted(this, PermissionManager.REQUEST_STORAGE_PERMISSION, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE))) {
             launchCamera()
         }
     }
@@ -61,24 +53,56 @@ class MainActivity : BaseActivity() {
 
         if (takePictureIntent.resolveActivity(packageManager) != null) {
 
-            var photoFile: File? = null
             try {
-                photoFile = BitmapUtils.createTempImageFile(this)
-            } catch (ex: IOException) {
-
-                ex.printStackTrace()
-            }
-
-
-            if (photoFile != null) {
-
+                val photoFile = BitmapUtils.createTempImageFile(this)
                 temporalPhotoPath = photoFile.absolutePath
-                val photoURI = FileProvider.getUriForFile(this,
-                        FILE_PROVIDER_AUTHORITY,
-                        photoFile)
+                val photoURI = FileProvider.getUriForFile(this, FILE_PROVIDER_AUTHORITY, photoFile)
                 takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI)
                 startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE)
+            } catch (ex: IOException) {
+                Timber.e(ex, ex.localizedMessage)
             }
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == Activity.RESULT_OK) {
+            processAndSetImage()
+        } else {
+            BitmapUtils.deleteImageFile(this, temporalPhotoPath)
+        }
+    }
+
+    private fun processAndSetImage() {
+        activityMainBinding.emojifyButton.visibility = View.GONE
+        activityMainBinding.titleTextView.visibility = View.GONE
+        activityMainBinding.saveButton.visibility = View.VISIBLE
+        activityMainBinding.shareButton.visibility = View.VISIBLE
+        activityMainBinding.clearButton.visibility = View.VISIBLE
+
+        val photoTaken = BitmapUtils.resamplePic(this, temporalPhotoPath)
+        activityMainBinding.imageView.setImageBitmap(photoTaken)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        PermissionManager.manageRequestPermissionResult(requestCode, grantResults,
+                object : PermissionManager.ResultPermissionActionGrant {
+                    override fun onGrant(grantedRequestCode: Int) {
+                        checkGrantedPermission(grantedRequestCode)
+                    }
+                },
+                object : PermissionManager.ResultPermissionActionDenied {
+                    override fun onDenied(deniedRequestCode: Int, context: Context) {
+                        Toast.makeText(context, R.string.permission_denied, Toast.LENGTH_SHORT).show()
+                    }
+                }, this)
+    }
+
+    private fun checkGrantedPermission(grantedRequestCode: Int) {
+        if (grantedRequestCode == PermissionManager.REQUEST_STORAGE_PERMISSION) {
+            launchCamera()
         }
     }
 }
