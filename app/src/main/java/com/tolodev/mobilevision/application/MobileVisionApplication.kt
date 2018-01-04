@@ -3,6 +3,7 @@ package com.tolodev.mobilevision.application
 import android.app.Application
 import com.crashlytics.android.Crashlytics
 import com.crashlytics.android.core.CrashlyticsCore
+import com.tolodev.mobilevision.manager.PreferencesManager
 import com.tolodev.mobilevision.util.CrashReportingTree
 import com.tolodev.mobilevision.util.DeviceUtil
 import io.fabric.sdk.android.Fabric
@@ -21,6 +22,7 @@ class MobileVisionApplication : Application() {
         DeviceUtil.initDeviceParams(this)
         initCrashlytics()
         initTimber()
+        PreferencesManager.initPreferenceManager()
     }
 
     private fun initCrashlytics() {

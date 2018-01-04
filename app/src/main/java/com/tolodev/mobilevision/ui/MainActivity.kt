@@ -14,6 +14,7 @@ import android.widget.Toast
 import com.tolodev.mobilevision.R
 import com.tolodev.mobilevision.databinding.ActivityMainBinding
 import com.tolodev.mobilevision.manager.PermissionManager
+import com.tolodev.mobilevision.manager.PreferencesManager
 import com.tolodev.mobilevision.util.BitmapUtils
 import timber.log.Timber
 import java.io.IOException
@@ -29,7 +30,7 @@ class MainActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         activityMainBinding = DataBindingUtil.setContentView(this, R.layout.activity_main)
-        addShortcut()
+        validateShortcutCreation()
     }
 
     fun clearImage(view: View) {
@@ -108,7 +109,7 @@ class MainActivity : BaseActivity() {
         }
     }
 
-    fun addShortcut() {
+    private fun addShortcut() {
         //Adding shortcut for MainActivity
         //on Home screen
         val shortcutIntent = Intent(applicationContext, this::class.java)
@@ -124,10 +125,12 @@ class MainActivity : BaseActivity() {
 
         intent.action = "com.android.launcher.action.INSTALL_SHORTCUT"
         applicationContext.sendBroadcast(intent)
+        PreferencesManager.getInstance().set("LAUNCH_ICON_CREATED", true)
+    }
 
-        val sharedPreferences = getPreferences(Context.MODE_PRIVATE)
-        val editor = sharedPreferences.edit()
-        editor.putBoolean("PREF_KEY_SHORTCUT_ADDED", true)
-        editor.commit()
+    private fun validateShortcutCreation() {
+        if (!PreferencesManager.getInstance().getBoolean("LAUNCH_ICON_CREATED")) {
+            addShortcut()
+        }
     }
 }
