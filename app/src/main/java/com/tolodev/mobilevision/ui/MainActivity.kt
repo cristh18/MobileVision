@@ -4,8 +4,8 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.databinding.DataBindingUtil
+import android.graphics.Bitmap
 import android.os.Bundle
 import android.provider.MediaStore
 import android.support.v4.content.FileProvider
@@ -26,6 +26,7 @@ class MainActivity : BaseActivity() {
 
     lateinit var activityMainBinding: ActivityMainBinding
     lateinit var temporalPhotoPath: String
+    lateinit var photoTaken: Bitmap
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,11 +35,19 @@ class MainActivity : BaseActivity() {
     }
 
     fun clearImage(view: View) {
+        activityMainBinding.emojifyButton.visibility = View.VISIBLE
+        activityMainBinding.titleTextView.visibility = View.VISIBLE
+        activityMainBinding.saveButton.visibility = View.GONE
+        activityMainBinding.shareButton.visibility = View.GONE
+        activityMainBinding.clearButton.visibility = View.GONE
 
+        activityMainBinding.imageView.setImageResource(0)
+        BitmapUtils.deleteImageFile(this, temporalPhotoPath)
     }
 
     fun saveMe(view: View) {
-
+        BitmapUtils.deleteImageFile(this, temporalPhotoPath)
+        BitmapUtils.saveImage(this, photoTaken)
     }
 
     fun emojifyMe(view: View) {
@@ -48,7 +57,9 @@ class MainActivity : BaseActivity() {
     }
 
     fun shareMe(view: View) {
-
+        BitmapUtils.deleteImageFile(this, temporalPhotoPath)
+        BitmapUtils.saveImage(this, photoTaken)
+        BitmapUtils.shareImage(this, temporalPhotoPath)
     }
 
     private fun launchCamera() {
@@ -84,7 +95,7 @@ class MainActivity : BaseActivity() {
         activityMainBinding.shareButton.visibility = View.VISIBLE
         activityMainBinding.clearButton.visibility = View.VISIBLE
 
-        val photoTaken = BitmapUtils.resamplePic(this, temporalPhotoPath)
+        photoTaken = BitmapUtils.resamplePic(this, temporalPhotoPath)
         activityMainBinding.imageView.setImageBitmap(photoTaken)
     }
 
